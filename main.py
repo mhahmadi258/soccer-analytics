@@ -65,9 +65,9 @@ while True:
 # Insert Circle to the images
     for pt, hw, box in zip(pts,hws,boxes):
         if abs(hw[0] - hw[1]) > 10 :    # remove the  ball
-            print(box)
-            croped_image = I[box[0]:box[2],box[1]:box[3]]
-
+            croped_image = I[box[1]:box[3],box[0]:box[2],:]
+            # Here Insert classification code 
+            
 
             cv2.rectangle(I, (box[:2]), (box[2:]), (0, 255, 0), 2)
             cv2.circle(J,(int(pt[0]),int(pt[1])),5,(0,0,255))

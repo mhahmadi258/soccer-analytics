@@ -1,10 +1,18 @@
 import numpy as np
 import cv2
+from keras.models import load_model
+import time
 
 N = 1050
 M = 700
 
 output_size = (N,M)
+
+# this method prepare image size for model input
+def prepare_image(img):
+  img = cv2.resize(img, dsize=(36,58))
+  img = np.expand_dims(img, axis=0)
+  return img
 
 # Create I shape closing kernel
 closing_kernel = np.zeros((25,15),dtype=np.uint8)
@@ -18,6 +26,9 @@ backSub = cv2.bgsegm.createBackgroundSubtractorMOG()
 src_point = np.array([(872,778),(1227,86),(141,167),(1135,115)], dtype=np.float32)
 dest_points = np.array([(525,700),(1050,0),(164,143),(886,143)], dtype=np.float32)
 H = cv2.getPerspectiveTransform(src_point, dest_points)
+
+# read classification model from file 
+model = load_model('model/model')
 
 # Create a VideoCapture object
 cap = cv2.VideoCapture('src/sample1.mp4')
@@ -66,18 +77,28 @@ while True:
     for pt, hw, box in zip(pts,hws,boxes):
         if abs(hw[0] - hw[1]) > 10 :    # remove the  ball
             croped_image = I[box[1]:box[3],box[0]:box[2],:]
-            # Here Insert classification code 
-            
+            # Here Insert classification code
+            input_image = prepare_image(croped_image)
+            softmax = model.predict(input_image)
+            label = np.argmax(softmax)
+
+            if label == 0:
+                cv2.circle(out_image,(int(pt[0]),int(pt[1])),15,(255,0,0),-1)
+            elif label == 1:
+                cv2.circle(out_image,(int(pt[0]),int(pt[1])),15,(255,255,255),-1)
+            elif label == 2:
+                cv2.circle(out_image,(int(pt[0]),int(pt[1])),15,(0,255,255),-1)
+            else :
+                cv2.circle(out_image,(int(pt[0]),int(pt[1])),15,(0,0,255),-1)
 
             cv2.rectangle(I, (box[:2]), (box[2:]), (0, 255, 0), 2)
             cv2.circle(J,(int(pt[0]),int(pt[1])),5,(0,0,255))
-            cv2.circle(out_image,(int(pt[0]),int(pt[1])),15,(0,0,255),-1)
 
 # Display images 
-    cv2.imshow('I',I)
-    cv2.imshow('j',J)
+    # cv2.imshow('I',I)
+    # cv2.imshow('j',J)
     cv2.imshow('out',out_image)
-    cv2.imshow('FG Mask',fgmask)
+    # cv2.imshow('FG Mask',fgmask)
     
 
     key = cv2.waitKey(33)   # ~ 30 frames per second

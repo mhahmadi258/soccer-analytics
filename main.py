@@ -35,7 +35,6 @@ while True:
 
     out_image = cv2.imread('src/2D_field.png')
 
-    # I = cv2.filter2D(I,-1,fg)
     J = cv2.warpPerspective(I, H, output_size)  # Apply transformation
 
 
@@ -45,9 +44,15 @@ while True:
     
     nc, CC, stats, centorids = cv2.connectedComponentsWithStats(fgmask) # Find connected components
     
-    stats[:,1] = stats[:,1] + stats[:,3]    # Bottom of components
-    stats[:,0] = stats[:,0] + stats[:,2] // 2   # Middle of components in x dirction
-    pts = stats[:,[0,1]]
+    boxes = stats[1:,:4].copy()
+    boxes[:,2] = boxes[:,0] + boxes[:,2]    # Right of image
+    boxes[:,3] = boxes[:,1] + boxes[:,3]    # Bottom of image
+
+    pts = stats.copy()
+    pts[:,1] = stats[:,1] + stats[:,3]    # Bottom of components
+    pts[:,0] = stats[:,0] + stats[:,2] // 2   # Middle of components in x dirction
+    pts = pts[0:,[0,1]]
+
     hws = stats[1:,2:4]     # Height and Width of componenets
     pts = pts.reshape(-1,1,2)
     pts = pts.astype('float64')
@@ -55,18 +60,25 @@ while True:
 
     pts = cv2.perspectiveTransform(pts,H).reshape(-1,2)     # Apply transformation to the points
 
-    pts = pts[1:]
+    pts = pts[1:]   # remove background component point
 
 # Insert Circle to the images
-    for pt, hw in zip(pts,hws):
-        if abs(hw[0] - hw[1]) > 10 :
+    for pt, hw, box in zip(pts,hws,boxes):
+        if abs(hw[0] - hw[1]) > 10 :    # remove the  ball
+            print(box)
+            croped_image = I[box[0]:box[2],box[1]:box[3]]
+
+
+            cv2.rectangle(I, (box[:2]), (box[2:]), (0, 255, 0), 2)
             cv2.circle(J,(int(pt[0]),int(pt[1])),5,(0,0,255))
             cv2.circle(out_image,(int(pt[0]),int(pt[1])),15,(0,0,255),-1)
 
-# Display images  
+# Display images 
+    cv2.imshow('I',I)
     cv2.imshow('j',J)
     cv2.imshow('out',out_image)
     cv2.imshow('FG Mask',fgmask)
+    
 
     key = cv2.waitKey(33)   # ~ 30 frames per second
     if key & 0xFF == ord('q'):  # exit when "q" is pressed

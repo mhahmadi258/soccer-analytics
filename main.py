@@ -33,11 +33,13 @@ H0 = cv2.getPerspectiveTransform(src_points0, dest_points0)
 H1 = cv2.getPerspectiveTransform(src_points1, dest_points1)
 H2 = cv2.getPerspectiveTransform(src_points2, dest_points2)
 
+H = H1
+
 # read classification model from file 
 model = load_model('model/model')
 
 # Create a VideoCapture object
-cap = cv2.VideoCapture('src/out2.mp4')
+cap = cv2.VideoCapture('src/sample1.mp4')
 
 if not cap.isOpened():
     cap.open()
